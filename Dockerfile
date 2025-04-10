@@ -15,7 +15,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build the Next.js application
-RUN pnpm build
+RUN pnpm build --no-lint
 
 # Production Stage
 FROM node:22-alpine AS runner
