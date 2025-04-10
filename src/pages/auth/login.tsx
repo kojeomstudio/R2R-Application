@@ -45,6 +45,11 @@ const LoginPage: React.FC = () => {
       setRawDeploymentUrl(url);
       setSanitizedDeploymentUrl(url);
 
+      // kojeomstudio
+      setEmail("admin@example.com");
+      setPassword("change_me_immediately");
+      // ~kojeomstudio
+
       if (window.__RUNTIME_CONFIG__) {
         if (
           window.__RUNTIME_CONFIG__.NEXT_PUBLIC_R2R_DEFAULT_EMAIL &&
