@@ -35,8 +35,19 @@ const Index: React.FC = () => {
   // New states for filters and search query
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, any>>({
-    ingestionStatus: ['success', 'failed', 'pending', 'enriched'],
-    extractionStatus: ['success', 'failed', 'pending'],
+    ingestionStatus: [
+      'pending',
+      'parsing',
+      'extracting',
+      'chunking',
+      'embedding',
+      'augmenting',
+      'storing',
+      'enriching',
+      'failed',
+      'success',
+    ],
+    extractionStatus: ['success', 'failed', 'pending', 'processing'],
   });
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -47,6 +58,26 @@ const Index: React.FC = () => {
       const client = await getClient();
       if (!client) {
         throw new Error('Failed to get authenticated client');
+      }
+
+      // Check if documents are cached with timestamp
+      const cachedDocuments = localStorage.getItem('documents');
+      const cachedTotalEntries = localStorage.getItem('documentsTotalEntries');
+      const cacheTimestamp = localStorage.getItem('documentsTimestamp');
+      const currentTime = new Date().getTime();
+
+      // Use cache if it exists and is less than 5 minutes old and has a total entries count
+      if (
+        cachedDocuments &&
+        cachedTotalEntries &&
+        cacheTimestamp &&
+        currentTime - parseInt(cacheTimestamp) < 5 * 60 * 1000
+      ) {
+        const cachedDocs = JSON.parse(cachedDocuments);
+        setDocuments(cachedDocs);
+        setTotalEntries(parseInt(cachedTotalEntries));
+        setLoading(false);
+        return;
       }
 
       let offset = 0;
@@ -65,6 +96,11 @@ const Index: React.FC = () => {
 
         allDocs = firstBatch.results;
         setDocuments(allDocs);
+
+        // Cache the documents with timestamp and total entries
+        localStorage.setItem('documents', JSON.stringify(allDocs));
+        localStorage.setItem('documentsTotalEntries', totalEntries.toString());
+        localStorage.setItem('documentsTimestamp', currentTime.toString());
 
         // Set loading to false after the first batch is fetched
         setLoading(false);
@@ -93,6 +129,8 @@ const Index: React.FC = () => {
       }
 
       setDocuments(allDocs);
+      localStorage.setItem('documents', JSON.stringify(allDocs));
+      localStorage.setItem('documentsTotalEntries', totalEntries.toString());
     } catch (error) {
       console.error('Error fetching documents:', error);
       setLoading(false);
@@ -114,7 +152,6 @@ const Index: React.FC = () => {
       .filter(
         (doc) =>
           doc.ingestionStatus !== IngestionStatus.SUCCESS &&
-          doc.ingestionStatus !== IngestionStatus.ENRICHED &&
           doc.ingestionStatus !== IngestionStatus.FAILED
       )
       .map((doc) => doc.id);
